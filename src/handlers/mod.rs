@@ -12,8 +12,8 @@ pub fn rooms_config(cfg: &mut web::ServiceConfig) {
         web::scope("/rooms")
             .route("", web::get().to(rooms::get_rooms))
             .route("", web::get().to(list_rooms))
-            .route("/{id}", web::get().to(rooms::get_room))
-            .route("/{id}/availability", web::get().to(rooms::get_availability))
+            //.route("/{id}", web::get().to(rooms::get_room))
+            //.route("/{id}/availability", web::get().to(rooms::get_availability))
             .route("", web::post().to(create_room))
             .route("/search", web::get().to(search_rooms)),
     );
