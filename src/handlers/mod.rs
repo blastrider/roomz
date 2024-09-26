@@ -5,7 +5,7 @@ pub mod users;
 use actix_web::web;
 use reservations::list_reservations;
 use rooms::{create_room, list_rooms};
-use users::{create_user, list_users};
+use users::{create_user, delete_user, list_users, update_user};
 
 pub fn rooms_config(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -33,6 +33,8 @@ pub fn users_config(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/users")
             .route("", web::get().to(list_users)) // Route pour lister les utilisateurs
-            .route("", web::post().to(create_user)), // Route pour créer un nouvel utilisateur
+            .route("", web::post().to(create_user)) // Route pour créer un utilisateur
+            .route("/{id}", web::put().to(update_user)) // Route pour mettre à jour un utilisateur
+            .route("/{id}", web::delete().to(delete_user)), // Route pour supprimer un utilisateur
     );
 }
