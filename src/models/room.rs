@@ -1,8 +1,8 @@
 use crate::schema::rooms;
 use chrono::NaiveDateTime;
 use diesel::{
-    ExpressionMethods, Insertable, PgArrayExpressionMethods, PgConnection, QueryDsl, QueryResult,
-    Queryable, RunQueryDsl,
+    BoolExpressionMethods, ExpressionMethods, Insertable, PgArrayExpressionMethods, PgConnection,
+    QueryDsl, QueryResult, Queryable, RunQueryDsl,
 };
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
