@@ -1,5 +1,9 @@
 use crate::schema::rooms;
-use diesel::{Insertable, PgConnection, QueryResult, Queryable, RunQueryDsl};
+use chrono::NaiveDateTime;
+use diesel::{
+    ExpressionMethods, Insertable, PgArrayExpressionMethods, PgConnection, QueryDsl, QueryResult,
+    Queryable, RunQueryDsl,
+};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -23,5 +27,40 @@ impl Room {
         use crate::schema::rooms::dsl::*;
 
         rooms.load::<Room>(conn)
+    }
+    // Méthode pour rechercher les salles disponibles
+    pub fn search_available_rooms(
+        conn: &mut PgConnection,
+        start_time: NaiveDateTime,
+        end_time: NaiveDateTime,
+        min_capacity: Option<i32>,
+        required_equipments: Option<Vec<String>>,
+    ) -> QueryResult<Vec<Room>> {
+        use crate::schema::reservations::dsl::{
+            end_time as res_end_time, reservations, room_id as res_room_id,
+            start_time as res_start_time,
+        };
+        use crate::schema::rooms::dsl::*;
+
+        let mut query = rooms.into_boxed();
+
+        if let Some(min_capacity_value) = min_capacity {
+            query = query.filter(capacity.ge(min_capacity_value));
+        }
+
+        if let Some(required_equipments_value) = required_equipments {
+            for equipment in required_equipments_value {
+                query = query.filter(equipments.contains(vec![equipment]));
+            }
+        }
+
+        // Filtrer les salles qui ne sont pas réservées dans la plage horaire donnée
+        let unavailable_rooms = reservations
+            .filter(res_start_time.lt(end_time).and(res_end_time.gt(start_time)))
+            .select(res_room_id);
+
+        query
+            .filter(id.ne_all(unavailable_rooms))
+            .load::<Room>(conn)
     }
 }

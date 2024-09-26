@@ -4,7 +4,7 @@ pub mod users;
 
 use actix_web::web;
 use reservations::list_reservations;
-use rooms::{create_room, list_rooms};
+use rooms::{create_room, list_rooms, search_rooms};
 use users::{create_user, delete_user, list_users, update_user};
 
 pub fn rooms_config(cfg: &mut web::ServiceConfig) {
@@ -14,7 +14,8 @@ pub fn rooms_config(cfg: &mut web::ServiceConfig) {
             .route("", web::get().to(list_rooms))
             .route("/{id}", web::get().to(rooms::get_room))
             .route("/{id}/availability", web::get().to(rooms::get_availability))
-            .route("", web::post().to(create_room)),
+            .route("", web::post().to(create_room))
+            .route("/search", web::get().to(search_rooms)),
     );
 }
 
