@@ -107,6 +107,15 @@ pub async fn get_availability(
         room_id, start_time, end_time
     );
 
+    // Vérifier si la salle existe
+    let room_exists = Room::exists(conn, *room_id);
+
+    if !room_exists {
+        warn!("Room with ID {} does not exist.", room_id);
+        return HttpResponse::NotFound().body(format!("Room with ID {} does not exist.", room_id));
+    }
+
+    // Vérifier la disponibilité de la salle
     match Room::is_available(conn, *room_id, start_time, end_time) {
         Ok(available) => {
             if available {
@@ -114,7 +123,7 @@ pub async fn get_availability(
                 HttpResponse::Ok().body("Room is available")
             } else {
                 info!("Room {} is not available.", room_id);
-                HttpResponse::Ok().body("Room is not available")
+                HttpResponse::Ok().body(format!("Room {} is not available.", room_id))
             }
         }
         Err(err) => {
