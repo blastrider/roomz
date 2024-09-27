@@ -67,16 +67,20 @@ impl Room {
     }
     pub fn is_available(
         conn: &mut PgConnection,
-        room_id: Uuid,
-        start_time: NaiveDateTime,
-        end_time: NaiveDateTime,
+        room_id_value: Uuid,
+        start_time_value: NaiveDateTime,
+        end_time_value: NaiveDateTime,
     ) -> QueryResult<bool> {
-        use crate::schema::reservations::dsl::*;
+        use crate::schema::reservations::dsl::{end_time, reservations, room_id, start_time};
 
         // Rechercher les réservations qui chevauchent la période donnée pour cette salle
         let count = reservations
-            .filter(room_id.eq(room_id)) // Assurez-vous que vous filtrez par `room_id`
-            .filter(start_time.lt(end_time).and(end_time.gt(start_time)))
+            .filter(room_id.eq(room_id_value)) // Filtrer par `room_id`
+            .filter(
+                start_time
+                    .lt(end_time_value) // La réservation commence avant la fin de la période demandée
+                    .and(end_time.gt(start_time_value)), // La réservation se termine après le début de la période demandée
+            )
             .count()
             .get_result::<i64>(conn)?;
 
