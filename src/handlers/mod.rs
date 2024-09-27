@@ -10,11 +10,11 @@ use users::{create_user, delete_user, list_users, update_user};
 pub fn rooms_config(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/rooms")
-            .route("", web::get().to(rooms::get_rooms))
-            .route("", web::get().to(list_rooms))
-            //.route("/{id}", web::get().to(rooms::get_room))
-            //.route("/{id}/availability", web::get().to(rooms::get_availability))
-            .route("", web::post().to(create_room))
+            .route("/all", web::get().to(rooms::get_rooms))
+            .route("/list", web::get().to(list_rooms))
+            .route("/{id}", web::get().to(rooms::get_room))
+            .route("/{id}/availability", web::get().to(rooms::get_availability))
+            .route("/create", web::post().to(create_room))
             .route("/search", web::get().to(search_rooms)),
     );
 }
