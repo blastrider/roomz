@@ -44,17 +44,19 @@ impl Room {
 
         let mut query = rooms.into_boxed();
 
+        // Filtrer par capacité minimale
         if let Some(min_capacity_value) = min_capacity {
             query = query.filter(capacity.ge(min_capacity_value));
         }
 
+        // Filtrer par équipements requis
         if let Some(required_equipments_value) = required_equipments {
             for equipment in required_equipments_value {
                 query = query.filter(equipments.contains(vec![equipment]));
             }
         }
 
-        // Filtrer les salles qui ne sont pas réservées dans la plage horaire donnée
+        // Exclure les salles qui sont réservées dans la période donnée
         let unavailable_rooms = reservations
             .filter(res_start_time.lt(end_time).and(res_end_time.gt(start_time)))
             .select(res_room_id);
@@ -80,5 +82,15 @@ impl Room {
 
         // Si count est 0, la salle est disponible
         Ok(count == 0)
+    }
+    // Vérifie si une salle existe dans la base de données
+    pub fn exists(conn: &mut PgConnection, room_id: Uuid) -> bool {
+        use crate::schema::rooms::dsl::*;
+
+        rooms
+            .filter(id.eq(room_id))
+            .select(id)
+            .first::<Uuid>(conn)
+            .is_ok()
     }
 }
