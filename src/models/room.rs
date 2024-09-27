@@ -73,14 +73,14 @@ impl Room {
     ) -> QueryResult<bool> {
         use crate::schema::reservations::dsl::*;
 
-        // Chercher les réservations qui chevauchent la période donnée
+        // Rechercher les réservations qui chevauchent la période donnée pour cette salle
         let count = reservations
-            .filter(room_id.eq(room_id))
+            .filter(room_id.eq(room_id)) // Assurez-vous que vous filtrez par `room_id`
             .filter(start_time.lt(end_time).and(end_time.gt(start_time)))
             .count()
             .get_result::<i64>(conn)?;
 
-        // Si count est 0, la salle est disponible
+        // Si `count` est 0, cela signifie qu'il n'y a pas de réservation chevauchante et donc la salle est disponible
         Ok(count == 0)
     }
     // Vérifie si une salle existe dans la base de données
