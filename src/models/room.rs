@@ -63,4 +63,22 @@ impl Room {
             .filter(id.ne_all(unavailable_rooms))
             .load::<Room>(conn)
     }
+    pub fn is_available(
+        conn: &mut PgConnection,
+        room_id: Uuid,
+        start_time: NaiveDateTime,
+        end_time: NaiveDateTime,
+    ) -> QueryResult<bool> {
+        use crate::schema::reservations::dsl::*;
+
+        // Chercher les réservations qui chevauchent la période donnée
+        let count = reservations
+            .filter(room_id.eq(room_id))
+            .filter(start_time.lt(end_time).and(end_time.gt(start_time)))
+            .count()
+            .get_result::<i64>(conn)?;
+
+        // Si count est 0, la salle est disponible
+        Ok(count == 0)
+    }
 }
