@@ -3,7 +3,9 @@ use crate::models::Room;
 use actix_web::{web, HttpResponse};
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
+use log::{error, info, warn};
 use serde::Deserialize;
+use uuid::Uuid;
 
 #[derive(Deserialize)]
 pub struct SearchQuery {
@@ -11,6 +13,12 @@ pub struct SearchQuery {
     end_time: String,
     min_capacity: Option<i32>,
     required_equipments: Option<Vec<String>>,
+}
+
+#[derive(Deserialize)]
+pub struct AvailabilityQuery {
+    start_time: String,
+    end_time: String,
 }
 
 pub async fn get_rooms() -> HttpResponse {
@@ -28,11 +36,6 @@ pub async fn get_room(room_id: web::Path<uuid::Uuid>) -> HttpResponse {
         Ok(room) => HttpResponse::Ok().json(room),
         Err(_) => HttpResponse::NotFound().finish(),
     }
-}
-
-pub async fn get_availability(room_id: web::Path<uuid::Uuid>) -> HttpResponse {
-    // Implémentation de la vérification de disponibilité
-    HttpResponse::Ok().finish()
 }
 
 pub async fn create_room(room_data: web::Json<Room>) -> HttpResponse {
@@ -67,5 +70,59 @@ pub async fn search_rooms(query: web::Query<SearchQuery>) -> HttpResponse {
     ) {
         Ok(rooms) => HttpResponse::Ok().json(rooms),
         Err(_) => HttpResponse::InternalServerError().finish(),
+    }
+}
+
+pub async fn get_availability(
+    room_id: web::Path<Uuid>,
+    query: web::Query<AvailabilityQuery>,
+) -> HttpResponse {
+    let conn = &mut DB_POOL.get().unwrap();
+
+    // Parse des temps de début et de fin
+    let start_time = match NaiveDateTime::parse_from_str(&query.start_time, "%Y-%m-%dT%H:%M:%S") {
+        Ok(st) => {
+            info!("Parsed start_time: {}", st);
+            st
+        }
+        Err(_) => {
+            warn!("Failed to parse start_time: {}", query.start_time);
+            return HttpResponse::BadRequest().body("Invalid start_time format");
+        }
+    };
+
+    let end_time = match NaiveDateTime::parse_from_str(&query.end_time, "%Y-%m-%dT%H:%M:%S") {
+        Ok(et) => {
+            info!("Parsed end_time: {}", et);
+            et
+        }
+        Err(_) => {
+            warn!("Failed to parse end_time: {}", query.end_time);
+            return HttpResponse::BadRequest().body("Invalid end_time format");
+        }
+    };
+
+    info!(
+        "Checking availability for room_id: {} between {} and {}",
+        room_id, start_time, end_time
+    );
+
+    match Room::is_available(conn, *room_id, start_time, end_time) {
+        Ok(available) => {
+            if available {
+                info!("Room {} is available.", room_id);
+                HttpResponse::Ok().body("Room is available")
+            } else {
+                info!("Room {} is not available.", room_id);
+                HttpResponse::Ok().body("Room is not available")
+            }
+        }
+        Err(err) => {
+            error!(
+                "Error checking availability for room {}: {:?}",
+                room_id, err
+            );
+            HttpResponse::InternalServerError().finish()
+        }
     }
 }
